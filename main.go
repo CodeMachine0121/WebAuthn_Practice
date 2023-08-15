@@ -60,7 +60,7 @@ func BeginRegistration(w http.ResponseWriter, r *http.Request, params httprouter
 	Utils.ErrorHandle(err)
 	user.Session = *sessionData
 
-	redis.Set(name, user)
+	redis.Set(name, *user)
 
 	// return options
 	w.Header().Set("Content-Type", "application/json")
@@ -73,18 +73,20 @@ func FinishRegistration(w http.ResponseWriter, r *http.Request, params httproute
 	query := r.URL.Query()
 	name := query.Get("name")
 
-	var user Models.User
-	err := redis.Get(name, &user)
-	Utils.ErrorHandle(err)
+	jsonString := redis.Get(name)
+	user := redis.JsonParseUser(jsonString)
 
+	// Parsing credentials from request body
 	session := user.Session
 	response, err := protocol.ParseCredentialCreationResponseBody(r.Body)
 	Utils.ErrorHandle(err)
 
 	credential, err := web.CreateCredential(user, session, response)
-	user.AddCredential(*credential)
+	//user.AddCredential(*credential)
 	// If login was successful, handle next steps
 	log.Println(credential.ID)
+
+	redis.Set(name, user)
 
 	w.WriteHeader(http.StatusOK)
 }

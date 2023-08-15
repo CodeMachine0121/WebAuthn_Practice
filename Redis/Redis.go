@@ -1,10 +1,12 @@
 package Redis
 
 import (
+	"Golang-WebAuthN/Models"
 	"Golang-WebAuthN/Utils"
 	"encoding/json"
 	"fmt"
 	"github.com/go-redis/redis"
+	"log"
 )
 
 type Redis struct {
@@ -23,7 +25,7 @@ func NewClient() *redis.Client {
 	return client
 }
 
-func (r *Redis) Set(key string, value interface{}) {
+func (r *Redis) Set(key string, value Models.User) {
 
 	jsonBytes, err := json.Marshal(value)
 	jsonString := string(jsonBytes)
@@ -33,8 +35,17 @@ func (r *Redis) Set(key string, value interface{}) {
 	Utils.ErrorHandle(err)
 }
 
-func (r *Redis) Get(key string, value interface{}) error {
+func (r *Redis) Get(key string) string {
 	jsonString, err := r.Client.Get(key).Result()
 	Utils.ErrorHandle(err)
-	return json.Unmarshal([]byte(jsonString), value)
+	return jsonString
+}
+
+func (r *Redis) JsonParseUser(jsonString string) Models.User {
+
+	var user Models.User
+	if err := json.Unmarshal([]byte(jsonString), &user); err != nil {
+		log.Fatal("Parsing error")
+	}
+	return user
 }
